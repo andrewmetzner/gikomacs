@@ -1943,7 +1943,6 @@ This version is case-sensitive."
 
 (gikopoi-defevent server-not-ok-to-take-stream (slot))
 
-
 (defun gikopoi-read-arglist ()
   (let* ((minibuffer-completion-confirm 'confirm)
          (server
@@ -1971,6 +1970,7 @@ This version is case-sensitive."
          (name
           (let ((default-name (if (and gikopoi-default-name
                                         (string-match "#password" gikopoi-default-name))
+                                  ;; Replace only "#password" with "#***"
                                   (replace-regexp-in-string "#password" "#***" gikopoi-default-name)
                                 gikopoi-default-name)))
             (let ((input (read-string (format "Name (default %s): " default-name))))
