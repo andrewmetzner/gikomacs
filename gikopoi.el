@@ -282,27 +282,27 @@
 (defvar gikopoi-current-private-user-id nil)
 
 
-(defun gikopoi-connect (server port area room name character password)
-  (when (websocket-openp gikopoi-socket)
-    (gikopoi-socket-close))
-  (let ((version (gikopoi-version-of-server server))
-	(login (gikopoi-login server area room name character password)))
-    (when (null login)
-      (error "Login unsuccessful %s" login))
-    (let-alist login
-      (setq id .userId pid .privateUserId)
-      (gikopoi-log-to-server server
-        (string-join (list (format-time-string "%a %b %d %Y %T GMT%z (%Z)") .userId
-			   "window.EXPECTED_SERVER_VERSION:" (number-to-string version)
-			   "loginMessage.appVersion:" (number-to-string .appVersion)
-			   "DIFFERENT:" (if (eql version .appVersion) "false" "true")) " "))
-      (gikopoi-log-to-server server
-        (string-join (list (format-time-string "%a %b %d %Y %T GMT%z (%Z)") .userId
- 			   (url-http-user-agent-string)) " "))
-      (setq gikopoi-current-server server
-	    gikopoi-current-user-id .userId
-	    gikopoi-current-private-user-id .privateUserId)
-      (gikopoi-socket-open server port pid))))
+;; (defun gikopoi-connect (server port area room name character password)
+;;   (when (websocket-openp gikopoi-socket)
+;;     (gikopoi-socket-close))
+;;   (let ((version (gikopoi-version-of-server server))
+;; 	(login (gikopoi-login server area room name character password)))
+;;     (when (null login)
+;;       (error "Login unsuccessful %s" login))
+;;     (let-alist login
+;;       (setq id .userId pid .privateUserId)
+;;       (gikopoi-log-to-server server
+;;         (string-join (list (format-time-string "%a %b %d %Y %T GMT%z (%Z)") .userId
+;; 			   "window.EXPECTED_SERVER_VERSION:" (number-to-string version)
+;; 			   "loginMessage.appVersion:" (number-to-string .appVersion)
+;; 			   "DIFFERENT:" (if (eql version .appVersion) "false" "true")) " "))
+;;       (gikopoi-log-to-server server
+;;         (string-join (list (format-time-string "%a %b %d %Y %T GMT%z (%Z)") .userId
+;;  			   (url-http-user-agent-string)) " "))
+;;       (setq gikopoi-current-server server
+;; 	    gikopoi-current-user-id .userId
+;; 	    gikopoi-current-private-user-id .privateUserId)
+;;       (gikopoi-socket-open server port pid))))
 
 
 ;; Server Events
@@ -1933,49 +1933,140 @@ This version is case-sensitive."
 
 (gikopoi-defevent server-not-ok-to-take-stream (slot))
 
+(defun gikopoi-connect (server port area room name character password)
+  (when (and (boundp 'gikopoi-socket) (websocket-openp gikopoi-socket))
+    (gikopoi-socket-close))
+  (let ((version (gikopoi-version-of-server server))
+        (login (gikopoi-login server area room name character password)))
+    (when (null login)
+      (error "Login unsuccessful %s" login))
+    (let-alist login
+      (setq id .userId pid .privateUserId)
+      (gikopoi-log-to-server server
+        (string-join (list (format-time-string "%a %b %d %Y %T GMT%z (%Z)") .userId
+               "window.EXPECTED_SERVER_VERSION:" (number-to-string version)
+               "loginMessage.appVersion:" (number-to-string .appVersion)
+               "DIFFERENT:" (if (eql version .appVersion) "false" "true")) " "))
+      (gikopoi-log-to-server server
+        (string-join (list (format-time-string "%a %b %d %Y %T GMT%z (%Z)") .userId
+                (url-http-user-agent-string)) " "))
+      (setq gikopoi-current-server server
+        gikopoi-current-user-id .userId
+        gikopoi-current-private-user-id .privateUserId)
+      (gikopoi-socket-open server port pid))))
+
+(defun gikopoi-get-most-populated-room (server)
+  "Fetch player data from SERVER and return the ID of the room with the most users."
+  (message "Querying %s for the busiest room..." server)
+  (let ((url (format "https://%s/players" server))
+        (json-object-type 'alist)
+        (best-room nil)
+        (max-players -1))
+    (condition-case nil
+        (with-current-buffer (url-retrieve-synchronously url)
+          (unwind-protect
+              (progn
+                (goto-char (point-min))
+
+                (if (not (re-search-forward "^[[:space:]]*$" nil t))
+                    (message "Gikopoi: Could not find JSON body in /players response")
+                  (let ((data (json-read)))
+
+                    (dolist (room-entry data)
+                      (let* ((room-id (if (symbolp (car room-entry))
+                                          (symbol-name (car room-entry))
+                                        (car room-entry)))
+                             (room-details (cdr room-entry))
+                             (player-count (cdr (assoc 'users room-details))))
+                        (when (and (numberp player-count) (> player-count max-players))
+                          (setq max-players player-count
+                                best-room room-id))))))
+                best-room)
+            (kill-buffer (current-buffer))))
+      (error 
+       (message "Gikopoi: Failed to fetch busiest room, using default.")
+       nil))))
+
 (defun gikopoi-read-arglist ()
   (let* ((minibuffer-completion-confirm 'confirm)
          (server
-          (let ((input (completing-read
-                        (format "Server (default %s): "
-                                gikopoi-default-server)
-                        (mapcar #'car gikopoi-servers))))
+          (let ((input (completing-read (format "Server (default %s): " gikopoi-default-server)
+                                       (mapcar #'car gikopoi-servers))))
             (if (string= input "") gikopoi-default-server input)))
          (port
-          (let ((input (when gikopoi-prompt-port-p
-                         (read-string (format "Port (default %s): "
-                                             gikopoi-default-port)))))
-            (if (or (null input) (string= input ""))
-                gikopoi-default-port
-              (string-to-number input))))
+          (let ((input (when (bound-and-true-p gikopoi-prompt-port-p)
+                         (read-string (format "Port (default %s): " gikopoi-default-port)))))
+            (if (or (null input) (string= input "")) gikopoi-default-port (string-to-number input))))
          (area
-          (let ((input (completing-read
-                        (format "Area (default %s): " gikopoi-default-area)
-                        (cdr (assoc server gikopoi-servers)))))
+          (let ((input (completing-read (format "Area (default %s): " gikopoi-default-area)
+                                       (cdr (assoc server gikopoi-servers)))))
             (if (string= input "") gikopoi-default-area input)))
          (room
-          (let ((input (read-string (format "Room (default %s): "
-                                           gikopoi-default-room))))
-            (if (string= input "") gikopoi-default-room input)))
+          (let ((input (read-string (format "Room (default %s): " gikopoi-default-room))))
+            (if (string= input "")
+                (or (gikopoi-get-most-populated-room server) gikopoi-default-room)
+              input)))
          (name
           (let* ((original-name gikopoi-default-name)
                  (display-name (if (string-match "#.*" original-name)
-                                  (replace-regexp-in-string "#.*" "#*****" original-name)
-                                original-name)))
-            (let ((input (read-string (format "Name (default %s): " display-name))))
-              (if (string= input "") original-name input))))
+                                   (replace-regexp-in-string "#.*" "#*****" original-name)
+                                 original-name))
+                 (input (read-string (format "Name (default %s): " display-name))))
+            (if (string= input "") original-name input)))
          (character
-          (let ((input (read-string (format "Character (default %s): "
-                                           gikopoi-default-character))))
+          (let ((input (read-string (format "Character (default %s): " gikopoi-default-character))))
             (if (string= input "") gikopoi-default-character input)))
          (password
-          (if gikopoi-prompt-password-p
-              (let ((input (read-passwd
-                            (format "Password (default %s): "
-                                    (if gikopoi-default-password "******" "")))))
+          (if (bound-and-true-p gikopoi-prompt-password-p)
+              (let ((input (read-passwd (format "Password (default %s): " 
+                                                (if gikopoi-default-password "******" "")))))
                 (if (string= input "") gikopoi-default-password input))
             gikopoi-default-password)))
     (list server port area room name character password)))
+;; (defun gikopoi-read-arglist ()
+;;   (let* ((minibuffer-completion-confirm 'confirm)
+;;          (server
+;;           (let ((input (completing-read
+;;                         (format "Server (default %s): "
+;;                                 gikopoi-default-server)
+;;                         (mapcar #'car gikopoi-servers))))
+;;             (if (string= input "") gikopoi-default-server input)))
+;;          (port
+;;           (let ((input (when gikopoi-prompt-port-p
+;;                          (read-string (format "Port (default %s): "
+;;                                              gikopoi-default-port)))))
+;;             (if (or (null input) (string= input ""))
+;;                 gikopoi-default-port
+;;               (string-to-number input))))
+;;          (area
+;;           (let ((input (completing-read
+;;                         (format "Area (default %s): " gikopoi-default-area)
+;;                         (cdr (assoc server gikopoi-servers)))))
+;;             (if (string= input "") gikopoi-default-area input)))
+
+;;          (room
+;;           (let ((input (read-string (format "Room (default %s): "
+;;                                            gikopoi-default-room))))
+;;             (if (string= input "") gikopoi-default-room input)))
+;;          (name
+;;           (let* ((original-name gikopoi-default-name)
+;;                  (display-name (if (string-match "#.*" original-name)
+;;                                   (replace-regexp-in-string "#.*" "#*****" original-name)
+;;                                 original-name)))
+;;             (let ((input (read-string (format "Name (default %s): " display-name))))
+;;               (if (string= input "") original-name input))))
+;;          (character
+;;           (let ((input (read-string (format "Character (default %s): "
+;;                                            gikopoi-default-character))))
+;;             (if (string= input "") gikopoi-default-character input)))
+;;          (password
+;;           (if gikopoi-prompt-password-p
+;;               (let ((input (read-passwd
+;;                             (format "Password (default %s): "
+;;                                     (if gikopoi-default-password "******" "")))))
+;;                 (if (string= input "") gikopoi-default-password input))
+;;             gikopoi-default-password)))
+;;     (list server port area room name character password)))
 
 (defun gikopoi-init-auto-ignore (&rest _args)
   "Load auto-ignored users and mark them ignored, retry if users not yet loaded."
