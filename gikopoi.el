@@ -1949,13 +1949,13 @@ This version is case-sensitive."
          (server
           (let ((input (completing-read
                         (format "Server (default %s): "
-				gikopoi-default-server)
+                                gikopoi-default-server)
                         (mapcar #'car gikopoi-servers))))
             (if (string= input "") gikopoi-default-server input)))
          (port
           (let ((input (when gikopoi-prompt-port-p
                          (read-string (format "Port (default %s): "
-					      gikopoi-default-port)))))
+                                             gikopoi-default-port)))))
             (if (or (null input) (string= input ""))
                 gikopoi-default-port
               (string-to-number input))))
@@ -1966,24 +1966,68 @@ This version is case-sensitive."
             (if (string= input "") gikopoi-default-area input)))
          (room
           (let ((input (read-string (format "Room (default %s): "
-					    gikopoi-default-room))))
+                                           gikopoi-default-room))))
             (if (string= input "") gikopoi-default-room input)))
          (name
-          (let ((input (read-string (format "Name (default %s): "
-					    gikopoi-default-name))))
-            (if (string= input "") gikopoi-default-name input)))
+          (let ((default-name (if (and gikopoi-default-name
+                                        (string-match "#password" gikopoi-default-name))
+                                  (replace-regexp-in-string "#password" "#***" gikopoi-default-name)
+                                gikopoi-default-name)))
+            (let ((input (read-string (format "Name (default %s): " default-name))))
+              (if (string= input "") default-name input))))
          (character
           (let ((input (read-string (format "Character (default %s): "
-					    gikopoi-default-character))))
+                                           gikopoi-default-character))))
             (if (string= input "") gikopoi-default-character input)))
          (password
           (if gikopoi-prompt-password-p
               (let ((input (read-passwd
                             (format "Password (default %s): "
-				    (if gikopoi-default-password "******" "")))))
+                                    (if gikopoi-default-password "******" "")))))
                 (if (string= input "") gikopoi-default-password input))
             gikopoi-default-password)))
     (list server port area room name character password)))
+
+;; (defun gikopoi-read-arglist ()
+;;   (let* ((minibuffer-completion-confirm 'confirm)
+;;          (server
+;;           (let ((input (completing-read
+;;                         (format "Server (default %s): "
+;; 				gikopoi-default-server)
+;;                         (mapcar #'car gikopoi-servers))))
+;;             (if (string= input "") gikopoi-default-server input)))
+;;          (port
+;;           (let ((input (when gikopoi-prompt-port-p
+;;                          (read-string (format "Port (default %s): "
+;; 					      gikopoi-default-port)))))
+;;             (if (or (null input) (string= input ""))
+;;                 gikopoi-default-port
+;;               (string-to-number input))))
+;;          (area
+;;           (let ((input (completing-read
+;;                         (format "Area (default %s): " gikopoi-default-area)
+;;                         (cdr (assoc server gikopoi-servers)))))
+;;             (if (string= input "") gikopoi-default-area input)))
+;;          (room
+;;           (let ((input (read-string (format "Room (default %s): "
+;; 					    gikopoi-default-room))))
+;;             (if (string= input "") gikopoi-default-room input)))
+;;          (name
+;;           (let ((input (read-string (format "Name (default %s): "
+;; 					    gikopoi-default-name))))
+;;             (if (string= input "") gikopoi-default-name input)))
+;;          (character
+;;           (let ((input (read-string (format "Character (default %s): "
+;; 					    gikopoi-default-character))))
+;;             (if (string= input "") gikopoi-default-character input)))
+;;          (password
+;;           (if gikopoi-prompt-password-p
+;;               (let ((input (read-passwd
+;;                             (format "Password (default %s): "
+;; 				    (if gikopoi-default-password "******" "")))))
+;;                 (if (string= input "") gikopoi-default-password input))
+;;             gikopoi-default-password)))
+;;     (list server port area room name character password)))
 
 ;; (defun gikopoi-read-arglist ()		
 ;;   (let* ((minibuffer-completion-confirm 'confirm)
