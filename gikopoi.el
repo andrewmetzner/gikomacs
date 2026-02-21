@@ -1314,7 +1314,7 @@ This version is case-sensitive."
 (defvar gikopoi-message-matched-p nil)
 
 ;; logger
-(defvar gikopoi-logger t
+(defcustom gikopoi-logger nil
   "If non-nil, Gikopoi will log to file. If nil, logging is disabled.")
 
 (defvar gikopoi-log-directory "./logs/"
