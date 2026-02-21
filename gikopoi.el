@@ -1987,65 +1987,6 @@ This version is case-sensitive."
             gikopoi-default-password)))
     (list server port area room name character password)))
 
-;; (defun gikopoi-read-arglist ()
-;;   (let* ((minibuffer-completion-confirm 'confirm)
-;;          (server
-;;           (let ((input (completing-read
-;;                         (format "Server (default %s): "
-;; 				gikopoi-default-server)
-;;                         (mapcar #'car gikopoi-servers))))
-;;             (if (string= input "") gikopoi-default-server input)))
-;;          (port
-;;           (let ((input (when gikopoi-prompt-port-p
-;;                          (read-string (format "Port (default %s): "
-;; 					      gikopoi-default-port)))))
-;;             (if (or (null input) (string= input ""))
-;;                 gikopoi-default-port
-;;               (string-to-number input))))
-;;          (area
-;;           (let ((input (completing-read
-;;                         (format "Area (default %s): " gikopoi-default-area)
-;;                         (cdr (assoc server gikopoi-servers)))))
-;;             (if (string= input "") gikopoi-default-area input)))
-;;          (room
-;;           (let ((input (read-string (format "Room (default %s): "
-;; 					    gikopoi-default-room))))
-;;             (if (string= input "") gikopoi-default-room input)))
-;;          (name
-;;           (let ((input (read-string (format "Name (default %s): "
-;; 					    gikopoi-default-name))))
-;;             (if (string= input "") gikopoi-default-name input)))
-;;          (character
-;;           (let ((input (read-string (format "Character (default %s): "
-;; 					    gikopoi-default-character))))
-;;             (if (string= input "") gikopoi-default-character input)))
-;;          (password
-;;           (if gikopoi-prompt-password-p
-;;               (let ((input (read-passwd
-;;                             (format "Password (default %s): "
-;; 				    (if gikopoi-default-password "******" "")))))
-;;                 (if (string= input "") gikopoi-default-password input))
-;;             gikopoi-default-password)))
-;;     (list server port area room name character password)))
-
-;; (defun gikopoi-read-arglist ()		
-;;   (let* ((minibuffer-completion-confirm 'confirm)
-;; 	 (server (or gikopoi-default-server
-;; 		     (completing-read "Server: " (mapcar #'car gikopoi-servers))))
-;; 	 (port (or (when gikopoi-prompt-port-p
-;; 		     (string-to-number (read-string "Port: ")))
-;; 		   gikopoi-default-port))
-;; 	 (area (or gikopoi-default-area
-;; 		   (completing-read "Area: " (cdr (assoc server gikopoi-servers)))))
-;; 	 (room (or gikopoi-default-room
-;; 		   (read-string "Room: ")))
-;; 	 (name (or gikopoi-default-name
-;; 		   (read-string "Name (RET if none): ")))
-;; 	 (character (or gikopoi-default-character
-;; 			(read-string "Character (RET if none): ")))
-;; 	 (password (or (when gikopoi-prompt-password-p (read-passwd "Password: "))
-;; 		       gikopoi-default-password)))
-;;     (list server port area room name character password)))
 (defun gikopoi-init-auto-ignore (&rest _args)
   "Load auto-ignored users and mark them ignored, retry if users not yet loaded."
   (if (and gikopoi-current-room (gikopoi-room-users gikopoi-current-room))
@@ -2091,7 +2032,7 @@ The functions are called with the elements returned by `gikopoi-read-arglist'.")
 
 (defvar gikopoi-reconnect-timer nil)
 
-(defcustom gikopoi-reconnect-timer-minutes 1
+(defcustom gikopoi-reconnect-timer-minutes 720
   "Minutes between automatic gikopoi reconnects.")
 
 (defun gikopoi-start-reconnect-timer ()
