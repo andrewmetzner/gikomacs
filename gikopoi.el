@@ -92,7 +92,7 @@
     ()
   "List of connectable Gikopoipoi servers and their areas."
   :group 'gikopoi
-  :type '(repeat (cons string (repeat string))))
+  :type '(repeat (cons string (repeat string)))))
 
 (defcustom gikopoi-preferred-language current-iso639-language
   "The preferred language(s) of the client."
