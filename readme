@@ -1,5 +1,8 @@
-some proposed additions and settings that akai uses for gikomacs
+akai's fork of gikomacs
 
-
-will add resize/tiling window additions to chat message buffer
-also add scroll when changing room, for existing msgs.
+features:
+- text-wrap, auto-scroll message buffer
+- auto-ignore feature (M-x gikopoi-auto-ignore)
+- auto-logger
+- auto-log out timer
+- other QoL
