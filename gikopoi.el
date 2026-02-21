@@ -1317,7 +1317,7 @@ This version is case-sensitive."
 (defcustom gikopoi-logger nil
   "If non-nil, Gikopoi will log to file. If nil, logging is disabled.")
 
-(defvar gikopoi-log-directory "./logs/"
+(defcustom gikopoi-log-directory "./logs/"
   "Directory where Gikopoi logs are stored.")
 
 (defun gikopoi--log-to-file (text)
@@ -1968,12 +1968,12 @@ This version is case-sensitive."
                                            gikopoi-default-room))))
             (if (string= input "") gikopoi-default-room input)))
          (name
-          (let ((default-name (if gikopoi-default-name
-                                  ;; Replace any # followed by characters with #******
-                                  (replace-regexp-in-string "#.*" "#******" gikopoi-default-name)
-                                gikopoi-default-name)))
-            (let ((input (read-string (format "Name (default %s): " default-name))))
-              (if (string= input "") default-name input))))
+          (let* ((original-name gikopoi-default-name)
+                 (display-name (if (string-match "#.*" original-name)
+                                  (replace-regexp-in-string "#.*" "#*****" original-name)
+                                original-name)))
+            (let ((input (read-string (format "Name (default %s): " display-name))))
+              (if (string= input "") original-name input))))
          (character
           (let ((input (read-string (format "Character (default %s): "
                                            gikopoi-default-character))))
@@ -2091,7 +2091,7 @@ The functions are called with the elements returned by `gikopoi-read-arglist'.")
 
 (defvar gikopoi-reconnect-timer nil)
 
-(defvar gikopoi-reconnect-timer-minutes 720
+(defcustom gikopoi-reconnect-timer-minutes 1
   "Minutes between automatic gikopoi reconnects.")
 
 (defun gikopoi-start-reconnect-timer ()
