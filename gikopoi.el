@@ -1969,7 +1969,7 @@ This version is case-sensitive."
 					    gikopoi-default-room))))
             (if (string= input "") gikopoi-default-room input)))
          (name
-          (let ((input (read-string (format "Name (default Akai◆giko//JRnk): "
+          (let ((input (read-string (format "Name (default %s): "
 					    gikopoi-default-name))))
             (if (string= input "") gikopoi-default-name input)))
          (character
