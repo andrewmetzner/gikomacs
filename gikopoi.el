@@ -1968,10 +1968,9 @@ This version is case-sensitive."
                                            gikopoi-default-room))))
             (if (string= input "") gikopoi-default-room input)))
          (name
-          (let ((default-name (if (and gikopoi-default-name
-                                        (string-match "#password" gikopoi-default-name))
-                                  ;; Replace only "#password" with "#***"
-                                  (replace-regexp-in-string "#password" "#***" gikopoi-default-name)
+          (let ((default-name (if gikopoi-default-name
+                                  ;; Replace any # followed by characters with #******
+                                  (replace-regexp-in-string "#.*" "#******" gikopoi-default-name)
                                 gikopoi-default-name)))
             (let ((input (read-string (format "Name (default %s): " default-name))))
               (if (string= input "") default-name input))))
